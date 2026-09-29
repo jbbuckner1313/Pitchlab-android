@@ -18,6 +18,7 @@ jobs:
         with:
           gradle-version: '8.10.2'
       - run: unzip -o PitchLab-android-source.zip -d project
+      - run: echo 'android { compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 } }' >> project/app/build.gradle.kts
       - run: gradle -p project :app:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
