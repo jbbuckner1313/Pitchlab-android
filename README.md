@@ -1,45 +1,39 @@
-# PitchLab Android — PitchLogic live decoding build
+# PitchLab Focus
 
-Open the project in Android Studio, let Gradle sync, and run it on a physical Android device (Android 8 or later). Bluetooth Low Energy cannot be tested in the usual emulator.
+Android pitching interface with a PitchLogic-style Focus dashboard, History, Settings, and an illustrative pitch replay. This is an original app, not the official PitchLogic app.
 
-## Features ready now
+## Version 0.5: connection and pitch displays
 
-- Find nearby Bluetooth LE devices, connect to one, discover its GATT services and characteristics, and subscribe to notification and indication characteristics one at a time.
-- Timestamp notifications as hex, save the trace locally, and share the trace through Android's share menu.
-- Decode the tested PitchLogic `4b810002` notification stream and automatically save velocity and spin for each pitch event.
-- Enter pitch type, speed and spin manually; review pitches and share them as CSV. CSV labels these rows `manual`.
+- Tap **Connect ball** to scan for and automatically select a compatible PitchLogic ball. The app verifies the PitchLogic data service before enabling the live notification stream.
+- The connection button becomes **Cancel search** while scanning and **Disconnect** while connecting or connected. Failed connections time out and can be retried.
+- Unrelated BLE devices are excluded, stale callbacks are ignored, and scanning stops when a ball is selected. Successful ball addresses are remembered.
+- Battery notifications update the connection indicator.
+- The Focus screen includes velocity, spin, spin-axis and spin-direction displays, horizontal/vertical movement, and editable pitch tags.
+- The ball display supports drag rotation, pinch zoom, and up to five user-marked last-touch points per saved pitch. Seam geometry is illustrative. Annotations are not sensor-measured last-touch readings.
+- Comparison values and pitch tags can be edited and saved. History opens individual pitch details. Manual pitch records and details can be shared.
+- Bluetooth diagnostics are available in Settings.
 
-## Test with the ball
+## Sensor decoding status
 
-1. Charge the ball, turn on Bluetooth, open PitchLab, grant nearby device permission, and tap **Find ball / BLE devices**.
-2. Tap the ball's device entry and wait for `Connected` and `Service` entries. If no entry appears, check that the official app is closed and the ball is awake.
-3. Select the pitch type, then make a safe test throw with the phone out of the throwing area. PitchLab will pair the speed and spin summaries by event number and add one entry automatically.
-4. Compare several readings with the official app during final calibration. Use **Share Bluetooth diagnostics** if a pitch is missed.
+The previously implemented spin decoder was invalid: timer-like fields could be misreported as RPM, including the reported 318 rpm reading. Automatic metric decoding and automatic pitch saving are disabled pending validation of the packet layout against known readings.
 
-## Implemented packet map
+A Bluetooth connection and incoming notifications do not establish accurate velocity, spin, axis, direction, movement, pitch classification, or last-touch measurements. The current measurement displays use manual entries; unknown sensor metrics remain blank. Pitch labels are user tags, not automatic classifications.
 
-- Characteristic: `4b810002-0394-7ff1-f00b-ab59cb8a9de3`
-- Velocity: packet `9A-1C-50-[event]`, little-endian float32 at byte offset 26, mph.
-- Spin: packet `9A/9E-1B-68-[event]`, median of the repeated valid RPM summary fields.
-- Calibration/configuration constants such as the repeated `25.9527` value are not treated as velocity.
-- Values outside 10–130 mph or 300–5000 rpm are rejected, and each event number is saved only once.
+## Install and use
 
-The packet mapping is based on captures from the user's own ball and matching throw effort. Continue comparing several throws against the official app before treating it as production-calibrated. Movement, spin axis and release metrics remain unmapped.
+This build uses application ID `com.example.pitchlab.focus`, displayed as **PitchLab Focus**, version code 5. It installs alongside the older PitchLab BLE Fix app. Updates signed with the same key preserve Focus's saved records.
 
-The app is an original prototype, not PitchLogic's branded app. No Android SDK or Gradle executable was available in the creation environment; the project has not yet been compiled on a physical Android device.
+1. Close nRF Connect, the official PitchLogic app, and older PitchLab apps so the ball is free to connect.
+2. Wake the ball, keep it near the phone, and tap Connect ball. Grant Nearby devices permission and enable Bluetooth if prompted.
+3. Confirm the ball connection. To release it for another app, tap Disconnect.
+4. Until live decoding is validated, add a manual pitch in Settings. Open its details from History to edit the pitch label and comparison metrics or mark last-touch annotations.
 
-## Virtual replay
+## Build
 
-Tap **Replay previous pitch** after saving a pitch. The 3D-styled field scene shows an animated ball from mound to plate with recorded pitch type, speed and spin. Use play/pause, restart, speed and the scrub bar. The path is explicitly illustrative; pitch type and spin do not determine its shape. When verified sensor values for movement, release and spin axis become available, the replay can use those measurements.
+The repository's GitHub Actions workflow extracts `PitchLab-android-source.zip`, builds the Android project, and uploads the APK artifact. For local builds, extract the archive and run Gradle 8.10.2 with JDK 17 and Android SDK 35:
 
-## Bullpen flow
+```
+gradle :app:assembleDebug --no-daemon
+```
 
-The Bullpen screen opens directly to connection, manual pitch capture, recent pitches and export. Tap any recent pitch to replay that specific entry. The replay includes stadium lighting, a strike zone, motion trail, speed/spin overlay, scrub bar, pause, restart and playback speed. These graphics are original 2D Canvas rendering and do not represent verified 3D tracking.
-
-## PitchLogic-style product direction
-
-The intended release flow is: connect once, select pitch type, start a bullpen, throw normally, and receive an automatic pitch card plus replay. The source now has the live speed/spin foundation for that workflow. The next capture-validation gates are spin direction/axis, efficiency, movement, release orientation, and the raw-sample trajectory model; those fields should not be labeled until matched against known official readings.
-
-## Release gate
-
-For a turnkey ball-connected release, test with the actual ball, identify any required connection handshake and authorized data format, validate speed/spin/movement against known readings, handle disconnects, test on the target phone, and produce a signed APK. None of those sensor claims can be established from source alone.
+The project uses Android Gradle Plugin 8.7.3 and Kotlin 2.0.21, targets Android 35, and supports Android 8 or later. APK compilation and signing verification passed locally. Physical phone BLE testing and live-metric validation remain outstanding. The replay path and displayed seams are illustrative.
